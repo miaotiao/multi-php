@@ -1,3 +1,0 @@
-php8010 C:\Users\mt\mt-soft\program\php-8.0.10-nts-Win32-vs16-x64\php.exe
-php741 C:\Users\mt\mt-soft\program\php741\php.exe
-php739 C:\Users\mt\mt-soft\program\php7319\php.exe
