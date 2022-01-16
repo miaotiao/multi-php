@@ -11,11 +11,14 @@
 
 ## todo
 - 将自己加入 path
-- 显示帮助
+  - 卸载功能
+    - 将自己从 path 里删除，将本文件夹内所有的内容都删除了
+- 显示帮助优化
 - 优化报错问题
 - 可以获取 php 版本
     - pvm get <php_version> 获取某个 php 版本，从 搜狗 下载或者 php 官网
 - pvm config
+- pvm 升级自己功能
 - 记录日志
 - 卸载功能
 - 刷新 path // https://stackoverflow.com/questions/17794507/powershell-reload-the-path-in-powershell

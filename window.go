@@ -2,6 +2,7 @@ package main
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"golang.org/x/sys/windows/registry"
 	"log"
@@ -12,11 +13,6 @@ import (
 type PowerShell struct {
 	PowerShell string
 }
-
-var (
-	sysMap  []string
-	phpPath string
-)
 
 func New() *PowerShell {
 	ps, err := exec.LookPath("powershell.exe")
@@ -74,10 +70,7 @@ func Registry() (phpPath string, sysMap []string) {
 
 // SetEnv 设置环境变量
 func SetEnv(newPhpPath string) bool {
-	if newPhpPath == "" {
-		return false
-	}
-	if !FileExists(newPhpPath) {
+	if newPhpPath == "" || !FileExists(newPhpPath) {
 		return false
 	}
 
@@ -106,4 +99,67 @@ func SetEnv(newPhpPath string) bool {
 		return false
 	}
 	return true
+}
+
+// addToEnv add var to env
+func addToEnv(path string) error {
+	if path == "" || !FileExists(path) {
+		return errors.New("path is incorrect")
+	}
+
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Environment`, registry.ALL_ACCESS)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+	s, _, _ := k.GetStringValue("Path")
+	s = strings.TrimRight(s, ";")
+	sMap := strings.Split(s, ";")
+
+	var newSString string
+	for _, sPath := range sMap {
+
+		if sPath == path {
+			continue
+		}
+		newSString += sPath + ";"
+	}
+	newSString += path + ";"
+
+	err = k.SetStringValue("Path", newSString)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+// delFromEnv remove var from env
+func delFromEnv(path string) error {
+	if path == "" || !FileExists(path) {
+		return errors.New("path is incorrect")
+	}
+
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Environment`, registry.ALL_ACCESS)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+	s, _, _ := k.GetStringValue("Path")
+	s = strings.TrimRight(s, ";")
+	sMap := strings.Split(s, ";")
+
+	var newSString string
+	for _, sPath := range sMap {
+
+		if sPath == path {
+			continue
+		}
+		newSString += sPath + ";"
+	}
+
+	err = k.SetStringValue("Path", newSString)
+	if err != nil {
+		return err
+	}
+	return nil
 }

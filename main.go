@@ -10,11 +10,14 @@ import (
 
 var PhpMap map[string]string
 
+const (
+	PvmVersion = "0.0.2"
+)
+
 func main() {
 	args := os.Args
 	if len(args) < 2 {
-		// todo show usage == help
-		fmt.Println("pvm add|use|ls [args]")
+		help()
 		return
 	}
 
@@ -26,9 +29,11 @@ func main() {
 		lsPhp()
 	case "ls":
 		lsPhp()
+	case "in-path":
+		addSelfPath()
+	default:
+		help()
 	}
-	//execPhp()
-
 }
 
 // getPhpMap 获取 php 的版本信息
@@ -67,7 +72,7 @@ func getPhpMap() map[string]string {
 
 	raw, err := ioutil.ReadFile("./php.txt")
 	if err != nil {
-		fmt.Println("php.json can't read")
+		fmt.Println("php.txt can't read")
 		return nil
 	}
 
@@ -172,4 +177,26 @@ func usePhp(key string) {
 
 	fmt.Println("use " + key + " success")
 	RefreshEnv()
+}
+
+func addSelfPath() {
+	// todo 判断是否已经加入
+	currentPath := CurrentPath()
+	// 将当前目录加入到运行环境中
+	addToEnv(currentPath)
+	RefreshEnv()
+}
+
+func help() {
+	fmt.Println("\nRunning version " + PvmVersion)
+	fmt.Println("\nUsage:")
+	fmt.Println(" ")
+	fmt.Println("  pvm add <php_path>			: Add path of new php install dir.")
+	fmt.Println("  pvm ls				: List all php versions.")
+	fmt.Println("  pvm use [version]			: Switch to use the specified version.")
+	fmt.Println("  pvm in-path				: Add pvm to Environment Variables.")
+	//fmt.Println("  pvm current                  : Display active version.")
+	//fmt.Println("  pvm uninstall <version>      : The version must be a specific version.")
+	//fmt.Println("  pvm update                   : Automatically update pvm to the latest version.")
+	fmt.Println(" ")
 }
