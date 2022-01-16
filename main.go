@@ -2,104 +2,174 @@ package main
 
 import (
 	"fmt"
+	"github.com/syyongx/php2go"
 	"io/ioutil"
 	"os"
-	"os/exec"
 	"strings"
 )
 
-var phpMap map[string]string
+var PhpMap map[string]string
 
 func main() {
-
-	Init()
-	fmt.Println(SysPath)
-	fmt.Println(PhpPath)
-	return
-
-	initConf()
-
 	args := os.Args
 	if len(args) < 2 {
-		fmt.Println("xxx set|get [参数]")
+		// todo show usage == help
+		fmt.Println("pvm add|use|ls [args]")
 		return
 	}
 
 	switch args[1] {
-	case "set":
-		setPhp(args[2])
+	case "use":
+		usePhp(args[2])
 	case "add":
-		addPhp(args[2], args[3])
+		addPhp(args[2])
+		lsPhp()
+	case "ls":
+		lsPhp()
 	}
-	getAllPhp()
-	execPhp()
+	//execPhp()
 
 }
 
-func initConf() {
+// getPhpMap 获取 php 的版本信息
+func getPhpMap() map[string]string {
+	if PhpMap != nil {
+		return PhpMap
+	}
+
+	PhpMap = make(map[string]string)
 	//	获取文件内容
+	if !FileExists("./php.txt") {
+		err := php2go.FilePutContents("./php.txt", "", 0777)
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil
+		}
+
+		phpPath, _ := Registry()
+		if phpPath == "" {
+			fmt.Println("当前未有 php 变量环境")
+			return nil
+		}
+
+		// 获取 php 版本信息
+		currentPhpVersion, err := WinExec("php", "-r", "echo PHP_VERSION;")
+		if err != nil {
+			return nil
+		}
+
+		err = php2go.FilePutContents("./php.txt", currentPhpVersion+" "+phpPath, 0777)
+		if err != nil {
+			fmt.Println(err.Error())
+			return nil
+		}
+	}
+
 	raw, err := ioutil.ReadFile("./php.txt")
 	if err != nil {
-		fmt.Println("读取 php.json 文件失败")
-		return
+		fmt.Println("php.json can't read")
+		return nil
 	}
-	phpMap = make(map[string]string)
+
+	// 为 win && *unix 换行考虑
 	rows := strings.Split(strings.ReplaceAll(string(raw), "\r\n", "\n"), "\n")
 	for _, item := range rows {
 		if item != "" {
 			col := strings.Fields(item)
-			phpMap[col[0]] = col[1]
+			PhpMap[col[0]] = col[1]
 		}
-
 	}
+	return PhpMap
 }
 
-func getAllPhp() {
+func lsPhp() {
 	//	获取当前 php 环境
-	currentPhpPath := os.Getenv("php")
-	//	todo 如果为空，就提醒
+	phpPath, _ := Registry()
+
+	if phpPath == "" {
+		fmt.Println("本机未有 php 变量环境")
+		return
+	}
+
+	phpMap := getPhpMap()
+	if phpMap == nil {
+		fmt.Println("本机未有 php 变量环境")
+	}
+
+	var newPhpString string
 	for key, item := range phpMap {
-		//	todo 判断文件是否存在
+		if !FileExists(item + "\\php.exe") {
+			continue
+		}
+
 		console := key + " " + item
-		if item == currentPhpPath {
+		if item == phpPath {
 			fmt.Println("--> " + console)
 		} else {
 			fmt.Println("    " + console)
 		}
+		newPhpString += console + "\r\n"
+	}
+
+	// 将新的 phpMap 写入 php.txt 中
+	err := php2go.FilePutContents("./php.txt", newPhpString, 0777)
+	if err != nil {
+		fmt.Println(err.Error())
 	}
 }
 
-func addPhp(pKey string, pPath string) {
-	if phpMap[pKey] != "" {
-		fmt.Println(pKey + " 已经存在，请使用其他名称")
+func addPhp(pPath string) {
+	phpExePath := pPath + "/php.exe"
+	if !FileExists(phpExePath) {
+		fmt.Println("file not existed")
 		return
 	}
-	phpMap[pKey] = pPath
-	var txt string
-	for key, val := range phpMap {
-		txt += key + " " + val + "\r\n"
-	}
-	ioutil.WriteFile("./php.txt", []byte(txt), 0666)
-}
-
-func setPhp(key string) {
-	path := phpMap[key]
-	fmt.Println()
-	if path == "" {
-		fmt.Println("路径为空: " + key + " " + path)
-	}
-	err := os.Setenv("php", path)
-	if err != nil {
-		fmt.Println(path + " 设置失败: " + err.Error())
-	}
-}
-
-func execPhp() {
-	cmd := exec.Command("php", "-v")
-	out, err := cmd.CombinedOutput()
+	// 获取 php 版本信息
+	phpVersion, err := WinExec(phpExePath, "-r", "echo PHP_VERSION;")
 	if err != nil {
 		fmt.Println(err.Error())
 		return
 	}
-	fmt.Println(string(out))
+
+	phpMap := getPhpMap()
+	var newPhpString string
+	if phpMap != nil {
+		for key, item := range PhpMap {
+			if pPath == item {
+				continue
+			}
+			phpStringRow := key + " " + item
+			newPhpString += phpStringRow + "\r\n"
+		}
+	}
+	newPhpString += phpVersion + " " + pPath + "\r\n"
+	err = php2go.FilePutContents("./php.txt", newPhpString, 0777)
+	if err != nil {
+		fmt.Println(err.Error())
+	}
+	PhpMap = nil
+}
+
+// usePhp
+// todo check this version is existed
+func usePhp(key string) {
+	phpMap := getPhpMap()
+	path := phpMap[key]
+	if path == "" {
+		fmt.Println(key + " not existed")
+		return
+	}
+
+	if !FileExists(path + "\\php.exe") {
+		fmt.Println(path + "\\php.exe file not existed")
+		return
+	}
+
+	if !SetEnv(path) {
+		fmt.Println("Failed")
+		return
+	}
+
+	fmt.Println("use " + key + " success")
+	RefreshEnv()
 }

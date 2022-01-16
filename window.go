@@ -1,18 +1,59 @@
 package main
 
 import (
-	"github.com/syyongx/php2go"
+	"bytes"
+	"fmt"
 	"golang.org/x/sys/windows/registry"
 	"log"
+	"os/exec"
 	"strings"
 )
 
+type PowerShell struct {
+	PowerShell string
+}
+
 var (
-	SysPath []string
-	PhpPath string
+	sysMap  []string
+	phpPath string
 )
 
-func Init() {
+func New() *PowerShell {
+	ps, err := exec.LookPath("powershell.exe")
+	if err != nil {
+		panic(err)
+		return nil
+	}
+	return &PowerShell{
+		PowerShell: ps,
+	}
+}
+
+func (ps *PowerShell) exec(args ...string) (stdOut string, stdErr string, err error) {
+	args = append([]string{"-NoProfile", "-NonInteractive"}, args...)
+	cmd := exec.Command(ps.PowerShell, args...)
+
+	var stdout bytes.Buffer
+	var stderr bytes.Buffer
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	err = cmd.Run()
+	stdOut, stdErr = stdout.String(), stderr.String()
+	return
+}
+
+func RefreshEnv() {
+	fmt.Println(`$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")`)
+	fmt.Println("copy,paste,run the above code in this command prompt")
+}
+
+func Registry() (phpPath string, sysMap []string) {
+
+	if phpPath != "" {
+		return phpPath, sysMap
+	}
+
 	k, err := registry.OpenKey(registry.CURRENT_USER, `Environment`, registry.ALL_ACCESS)
 	if err != nil {
 		log.Fatal(err)
@@ -20,18 +61,49 @@ func Init() {
 	defer k.Close()
 	s, _, _ := k.GetStringValue("Path")
 	s = strings.TrimRight(s, ";")
-	SysPath = strings.Split(s, ";")
-	for _, val := range SysPath {
-		if php2go.FileExists(val + "php.exe") {
-			PhpPath = val
+	sysMap = strings.Split(s, ";")
+	for _, val := range sysMap {
+
+		if FileExists(val + "\\php.exe") {
+			phpPath = val
 		}
-		SysPath = append(SysPath, val)
+		//SysPath = append(SysPath, val)
 	}
+	return phpPath, sysMap
 }
 
-func GetEnv() {
-}
+// SetEnv 设置环境变量
+func SetEnv(newPhpPath string) bool {
+	if newPhpPath == "" {
+		return false
+	}
+	if !FileExists(newPhpPath) {
+		return false
+	}
 
-func SetEnv() {
+	k, err := registry.OpenKey(registry.CURRENT_USER, `Environment`, registry.ALL_ACCESS)
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer k.Close()
+	s, _, _ := k.GetStringValue("Path")
+	s = strings.TrimRight(s, ";")
+	sMap := strings.Split(s, ";")
 
+	var newSString string
+	for _, sPath := range sMap {
+
+		if FileExists(sPath + "\\php.exe") {
+			continue
+		}
+		newSString += sPath + ";"
+	}
+	newSString += newPhpPath + ";"
+
+	err = k.SetStringValue("Path", newSString)
+	if err != nil {
+		fmt.Println(err.Error())
+		return false
+	}
+	return true
 }

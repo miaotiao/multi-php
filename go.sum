@@ -1,0 +1,4 @@
+github.com/syyongx/php2go v0.9.5 h1:0BASo4ZDkCkLP3s+CeO4wUbiLT9f9WVBhuf9M2JBfQg=
+github.com/syyongx/php2go v0.9.5/go.mod h1:meN2eIhhUoxOd2nMxbpe8g6cFPXI5O9/UAAuz7oDdzw=
+golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e h1:fLOSk5Q00efkSvAm+4xcoXD+RRmLmmulPn5I3Y9F2EM=
+golang.org/x/sys v0.0.0-20211216021012-1d35b9e2eb4e/go.mod h1:oPkhp1MJrh7nUepCBck5+mAzfO9JrbApNNgaTdGDITg=
