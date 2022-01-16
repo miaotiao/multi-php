@@ -11,7 +11,7 @@ import (
 var PhpMap map[string]string
 
 const (
-	PvmVersion = "0.0.2"
+	PvmVersion = "0.0.1"
 )
 
 func main() {
