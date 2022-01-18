@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"github.com/fatih/color"
 	"golang.org/x/sys/windows/registry"
 	"log"
 	"os/exec"
@@ -41,7 +42,7 @@ func (ps *PowerShell) exec(args ...string) (stdOut string, stdErr string, err er
 
 func RefreshEnv() {
 	fmt.Println(`$env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")`)
-	fmt.Println("copy,paste,run the above code in this command prompt")
+	color.Yellow("copy,paste,run the above code in this command prompt")
 }
 
 func Registry() (phpPath string, sysMap []string) {
@@ -95,7 +96,7 @@ func SetEnv(newPhpPath string) bool {
 
 	err = k.SetStringValue("Path", newSString)
 	if err != nil {
-		fmt.Println(err.Error())
+		color.Red(err.Error())
 		return false
 	}
 	return true
