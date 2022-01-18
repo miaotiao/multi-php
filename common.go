@@ -20,7 +20,8 @@ func WinExec(name string, arg ...string) (string, error) {
 	return string(output), err
 }
 
-func CurrentPath() string {
+// InstallPath get install path
+func InstallPath() string {
 	ex, err := os.Executable()
 	if err != nil {
 		panic(err)

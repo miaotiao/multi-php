@@ -12,7 +12,7 @@ import (
 var PhpMap map[string]string
 
 const (
-	PvmVersion = "0.0.1"
+	PvmVersion = "0.0.2"
 )
 
 func main() {
@@ -45,8 +45,8 @@ func getPhpMap() map[string]string {
 
 	PhpMap = make(map[string]string)
 	//	获取文件内容
-	if !FileExists("./php.txt") {
-		err := php2go.FilePutContents("./php.txt", "", 0777)
+	if !FileExists(confPath()) {
+		err := php2go.FilePutContents(confPath(), "", 0777)
 		if err != nil {
 			fmt.Println(err.Error())
 			return nil
@@ -64,14 +64,14 @@ func getPhpMap() map[string]string {
 			return nil
 		}
 
-		err = php2go.FilePutContents("./php.txt", currentPhpVersion+" "+phpPath, 0777)
+		err = php2go.FilePutContents(confPath(), currentPhpVersion+" "+phpPath, 0777)
 		if err != nil {
 			color.Red(err.Error())
 			return nil
 		}
 	}
 
-	raw, err := ioutil.ReadFile("./php.txt")
+	raw, err := ioutil.ReadFile(confPath())
 	if err != nil {
 		color.Red("php.txt can't read")
 		return nil
@@ -118,10 +118,15 @@ func lsPhp() {
 	}
 
 	// 将新的 phpMap 写入 php.txt 中
-	err := php2go.FilePutContents("./php.txt", newPhpString, 0777)
+	err := php2go.FilePutContents(confPath(), newPhpString, 0777)
 	if err != nil {
 		color.Red(err.Error())
 	}
+}
+
+// confPath conf file path
+func confPath() string {
+	return InstallPath() + "/php.txt"
 }
 
 func addPhp(pPath string) {
@@ -149,7 +154,7 @@ func addPhp(pPath string) {
 		}
 	}
 	newPhpString += phpVersion + " " + pPath + "\r\n"
-	err = php2go.FilePutContents("./php.txt", newPhpString, 0777)
+	err = php2go.FilePutContents(confPath(), newPhpString, 0777)
 	if err != nil {
 		color.Red(err.Error())
 	}
@@ -182,9 +187,9 @@ func usePhp(key string) {
 
 func addSelfPath() {
 	// todo 判断是否已经加入
-	currentPath := CurrentPath()
+	InstallPath := InstallPath()
 	// 将当前目录加入到运行环境中
-	err := addToEnv(currentPath)
+	err := addToEnv(InstallPath)
 	if err != nil {
 		color.Red(err.Error())
 	}
